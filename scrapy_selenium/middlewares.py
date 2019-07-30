@@ -13,8 +13,8 @@ from .http import SeleniumRequest
 class SeleniumMiddleware:
     """Scrapy middleware handling the requests using selenium"""
 
-    def __init__(self, driver_name, driver_executable_path,
-        browser_executable_path, command_executor, driver_arguments):
+    def __init__(self, driver_name, driver_executable_path, driver_arguments,
+        browser_executable_path, driver_desired_capabilities=None, driver_log_key=None):
         """Initialize the selenium webdriver
 
         Parameters
@@ -48,7 +48,8 @@ class SeleniumMiddleware:
 
         driver_kwargs = {
             'executable_path': driver_executable_path,
-            f'{driver_name}_options': driver_options
+            f'{driver_name}_options': driver_options,
+            "desired_capabilities": driver_desired_capabilities
         }
 
         # locally installed driver
@@ -74,6 +75,8 @@ class SeleniumMiddleware:
         browser_executable_path = crawler.settings.get('SELENIUM_BROWSER_EXECUTABLE_PATH')
         command_executor = crawler.settings.get('SELENIUM_COMMAND_EXECUTOR')
         driver_arguments = crawler.settings.get('SELENIUM_DRIVER_ARGUMENTS')
+        driver_desired_capabilities = crawler.settings.get('SELENIUM_DRIVER_DESIRED_CAPABILITIES')
+        driver_log_key = crawler.settings.get('SELENIUM_DRIVER_LOG_KEY')
 
         if driver_name is None:
             raise NotConfigured('SELENIUM_DRIVER_NAME must be set')
@@ -85,9 +88,10 @@ class SeleniumMiddleware:
         middleware = cls(
             driver_name=driver_name,
             driver_executable_path=driver_executable_path,
+            driver_arguments=driver_arguments,
             browser_executable_path=browser_executable_path,
-            command_executor=command_executor,
-            driver_arguments=driver_arguments
+            driver_desired_capabilities=driver_desired_capabilities,
+            driver_log_key=driver_log_key
         )
 
         crawler.signals.connect(middleware.spider_closed, signals.spider_closed)
@@ -122,6 +126,9 @@ class SeleniumMiddleware:
             self.driver.execute_script(request.script)
 
         body = str.encode(self.driver.page_source)
+
+        if self.driver_log_key is not None:
+            request.meta.update({"driver_log": self.driver.get_log(self.driver_log_key)})
 
         # Expose the driver via the "meta" attribute
         request.meta.update({'driver': self.driver})
