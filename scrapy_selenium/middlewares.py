@@ -47,17 +47,13 @@ class SeleniumMiddleware:
         for argument in driver_arguments:
             driver_options.add_argument(argument)
 
-        driver_kwargs = {
-            'executable_path': driver_executable_path,
-            f'{driver_name}_options': driver_options,
-            "desired_capabilities": driver_desired_capabilities
-        }
-
+        self.driver_log_key = driver_log_key
         # locally installed driver
         if driver_executable_path is not None:
             driver_kwargs = {
                 'executable_path': driver_executable_path,
-                f'{driver_name}_options': driver_options
+                f'{driver_name}_options': driver_options,
+                "desired_capabilities": driver_desired_capabilities
             }
             self.driver = driver_klass(**driver_kwargs)
         # remote driver
